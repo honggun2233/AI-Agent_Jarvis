@@ -1,0 +1,50 @@
+{
+  "workspace": "C:\\Users\\Samsung\\Jarvis",
+  "gateway": {
+    "telegram": {
+      "bot_token": "${TELEGRAM_BOT_TOKEN}"
+    }
+  },
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-opus-4-8",
+    "api_key": "${ANTHROPIC_API_KEY}"
+  },
+  "agents": [
+    {
+      "id": "core",
+      "name": "Jarvis Core",
+      "soul": "agents/core/SOUL.md",
+      "channels": ["telegram"],
+      "skills": ["morning-briefing"]
+    },
+    {
+      "id": "finance",
+      "name": "Finance Agent",
+      "soul": "agents/finance/SOUL.md",
+      "channels": [],
+      "skills": ["open-banking", "samsung-sec-parser", "naver-finance"]
+    },
+    {
+      "id": "assistant",
+      "name": "Assistant Agent",
+      "soul": "agents/assistant/SOUL.md",
+      "channels": [],
+      "skills": ["gmail-reader", "calendar-reader"]
+    },
+    {
+      "id": "work",
+      "name": "Work Agent",
+      "soul": "agents/work/SOUL.md",
+      "channels": [],
+      "skills": []
+    },
+    {
+      "id": "project",
+      "name": "Project Agent",
+      "soul": "agents/project/SOUL.md",
+      "channels": [],
+      "skills": ["github-monitor"]
+    }
+  ]
+}
