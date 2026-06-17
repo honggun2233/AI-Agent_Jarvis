@@ -28,9 +28,16 @@ def get_service():
 
 def get_today_events():
     service = get_service()
-    now = datetime.utcnow()
-    start = now.replace(hour=0, minute=0, second=0).isoformat() + 'Z'
-    end = now.replace(hour=23, minute=59, second=59).isoformat() + 'Z'
+    from datetime import timezone
+    import time
+    # Use local date for start/end to correctly capture KST events
+    now_local = datetime.now()
+    start_local = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_local = now_local.replace(hour=23, minute=59, second=59, microsecond=0)
+    # Convert to UTC for API
+    utc_offset = datetime.utcnow() - now_local
+    start = (start_local + utc_offset).isoformat() + 'Z'
+    end = (end_local + utc_offset).isoformat() + 'Z'
     events_result = service.events().list(
         calendarId='primary', timeMin=start, timeMax=end,
         singleEvents=True, orderBy='startTime'
@@ -43,7 +50,7 @@ def get_today_events():
             'title': e.get('summary', '제목 없음'),
             'start': start_time,
             'location': e.get('location', ''),
-            'description': e.get('description', '')[:100]
+            'description': (e.get('description') or '')[:100]
         })
     return result
 

@@ -23,7 +23,7 @@
       "name": "Finance Agent",
       "soul": "agents/finance/SOUL.md",
       "channels": [],
-      "skills": ["open-banking", "samsung-sec-parser", "naver-finance"]
+      "skills": ["open-banking", "gmail-reader", "naver-finance"]
     },
     {
       "id": "assistant",

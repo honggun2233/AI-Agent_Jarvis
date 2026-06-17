@@ -1,4 +1,4 @@
-import os, sys, json, argparse
+import os, sys, json, argparse, re
 from datetime import datetime, timedelta
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -6,8 +6,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.modify'
+    'https://www.googleapis.com/auth/gmail.readonly'
 ]
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TOKEN_PATH = os.path.join(BASE_DIR, 'token.json')
@@ -87,7 +86,6 @@ def parse_samsung_securities(hours=48):
             userId='me', id=msg['id'], format='full'
         ).execute()
         snippet = detail.get('snippet', '')
-        import re
         m = re.search(r'(.+?)\s+(\d+)주\s+.*?체결.*?(\d[\d,]+)원', snippet)
         if m:
             trades.append({

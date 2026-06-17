@@ -11,19 +11,24 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 
 def run_skill(script_path: str, args: list) -> str:
     result = subprocess.run(
-        ['python', os.path.join(BASE_DIR, script_path)] + args,
+        [sys.executable, os.path.join(BASE_DIR, script_path)] + args,
         capture_output=True, text=True, timeout=30
     )
+    if result.returncode != 0 and result.stderr:
+        print(f"Skill error ({script_path}): {result.stderr[:200]}")
     return result.stdout.strip()
 
 
 def send_telegram(message: str):
-    url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
-    requests.post(url, json={
-        'chat_id': CHAT_ID,
-        'text': message,
-        'parse_mode': 'Markdown'
-    })
+    try:
+        url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
+        requests.post(url, json={
+            'chat_id': CHAT_ID,
+            'text': message,
+            'parse_mode': 'Markdown'
+        }, timeout=10)
+    except Exception as e:
+        print(f"Telegram 전송 실패: {e}")
 
 
 def build_briefing() -> str:
