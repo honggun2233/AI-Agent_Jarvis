@@ -1,0 +1,8 @@
+.env
+credentials.json
+token.json
+token_calendar.json
+*.pyc
+__pycache__/
+node_modules/
+.superpowers/
