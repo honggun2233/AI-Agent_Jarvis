@@ -17,43 +17,46 @@ progress = override_pct  (수동 보정값이 있으면 우선)
          = round(완료 마일스톤 수 / 전체 마일스톤 수 × 100)  (없으면 자동)
 ```
 
-## 데이터 모델
+## 데이터 모델 (Markdown SSOT)
 
-단일 파일: `C:\Users\Samsung\Jarvis\data\projects.json`
+진척률 원본은 **프로젝트별 Markdown 파일**: `C:\project\<폴더>\PROJECT.md`
+사람이 직접 읽고 편집할 수 있는 단일 소스(SSOT). 스크립트는 이 파일을 파싱/갱신한다.
 
-```jsonc
-{
-  "updated": "2026-06-17T17:00:00+09:00",
-  "projects": [
-    {
-      "name": "유랑고",              // 표시 이름
-      "folder": "urango_project",    // C:\project 하위 폴더명 (식별 키)
-      "type": "personal",            // personal | work
-      "milestones": [
-        { "title": "기획", "done": true },
-        { "title": "개발", "done": false }
-      ],
-      "override_pct": null,          // 수동 보정값 (없으면 null)
-      "note": "",                    // 한 줄 상태 메모
-      "source": "auto",              // auto(추출) | manual
-      "status": "active",            // active | pending(신규, 추출대기) | archived
-      "updated": "2026-06-17T17:00:00+09:00"
-    }
-  ]
-}
+```markdown
+---
+name: 유랑고
+type: personal          # personal | work
+override_pct:           # 비우면 자동계산, 0~100 숫자면 수동 보정
+status: active          # active | pending(신규,추출대기) | archived
+updated: 2026-06-17
+---
+
+# 유랑고  ·  진척률 33% (자동)
+
+## 마일스톤
+- [x] 기획
+- [ ] 개발
+- [ ] 배포
+
+## 메모
+-
 ```
 
-- **식별 키는 `folder`** (폴더명). 표시 이름(`name`)은 정리된 한글명.
-- `status: pending` = 신규 감지됐으나 아직 마일스톤 추출 전.
+- **식별 키 = 폴더명**(`C:\project\<폴더>`). frontmatter `name`은 표시용 한글명.
+- **진척률** = `override_pct` 있으면 그 값, 없으면 `[x] 개수 / 전체 ×100`.
+- `# 제목` 줄의 "진척률 NN%"는 스크립트가 갱신할 때 다시 써주는 **표시용**(파싱 기준 아님).
+- 파싱 기준은 frontmatter + `## 마일스톤` 아래 `- [ ]`/`- [x]` 체크박스.
+- 중앙 인덱스 파일은 두지 않는다. `project_tracker --list`가 모든 `PROJECT.md`를 모아 표를 생성(원하면 `C:\project\_DASHBOARD.md`로 출력 가능).
 
 ## 컴포넌트
 
 ### 1. `scripts/project_scan.py` — 폴더 동기화 (토큰 0)
-- `C:\project` 하위 폴더를 훑어 `projects.json`과 비교
-- 빌드/캐시/백업 폴더 제외 (`.git`, `node_modules`, `.gradle`, `_*_backup_*`, `repo_temp` 등)
-- 새 폴더 → `status: pending`으로 등록 (마일스톤 빈 상태)
-- 사라진 폴더 → `status: archived`
+- `C:\project` 하위 1단계 폴더를 훑어 `PROJECT.md` 존재 여부 확인
+- 빌드/캐시/백업 폴더 제외 (아래 제외 규칙)
+- `PROJECT.md` 없는 폴더 → **pending `PROJECT.md` 자동 생성**
+  (frontmatter `status: pending`, `name`=폴더명, 마일스톤 비움)
 - LLM 호출 없음. 순수 파일시스템 스캔.
+- `--report` : 이번 스캔에서 새로 만든 pending 목록을 출력(모닝 브리핑/Jarvis가 후속 추출에 사용)
 
 ### 2. `scripts/project_extract.py` — 마일스톤 추출 후보 수집 (토큰 절약)
 LLM이 마일스톤을 만들기 위한 **최소 입력**을 준비하는 헬퍼. 추출 판단은 LLM(Jarvis)이 한다.
@@ -73,8 +76,10 @@ LLM이 마일스톤을 만들기 위한 **최소 입력**을 준비하는 헬퍼
 - `--set "<프로젝트>" <0-100>` : override_pct 보정 (null로 되돌리려면 `auto`)
 - `--add "<프로젝트>" "<마일스톤>"` / `--remove "<프로젝트>" "<마일스톤>"`
 - `--note "<프로젝트>" "<메모>"`
-- `--apply <json파일|->` : 추출 결과(마일스톤 배열)를 프로젝트에 일괄 등록, status→active
+- `--apply "<프로젝트>" <json파일|->` : 추출 결과(마일스톤 배열 JSON)를 해당 `PROJECT.md`에 일괄 등록, status→active
 - 모든 한글 출력은 UTF-8 (`PYTHONIOENCODING=utf-8`)
+- 편집 명령은 대상 `PROJECT.md`를 다시 써서 `updated`와 제목의 진척률 표시를 갱신
+- 프로젝트 지정은 `name`(한글명) 또는 폴더명 둘 다 허용
 
 ### 4. 모닝 브리핑 통합 (`morning_briefing.py`)
 - 시작 시 `project_scan.py` 실행 → 신규 폴더 동기화
