@@ -11,7 +11,7 @@ PROJECTS_ROOT = r"C:\project"
 MD_NAME = "PROJECT.md"
 EXCLUDE_EXACT = {"repo_temp"}
 EXCLUDE_PREFIX = ("_", ".")          # 백업/캐시/숨김 폴더
-PERSONAL = {"urango_project", "ongiro 프로젝트"}
+PERSONAL = {"urango1", "ongiro 프로젝트"}
 
 TEMPLATE = """---
 name: {name}

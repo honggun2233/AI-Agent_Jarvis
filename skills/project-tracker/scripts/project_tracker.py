@@ -77,6 +77,8 @@ def load_all():
     if not os.path.isdir(PROJECTS_ROOT):
         return res
     for d in sorted(os.listdir(PROJECTS_ROOT)):
+        if d.startswith(("_", ".")):          # 백업/은퇴/숨김 폴더 제외 (scan과 일치)
+            continue
         md = os.path.join(PROJECTS_ROOT, d, MD_NAME)
         if os.path.isfile(md):
             fm, ms, tail = parse_md(md)
