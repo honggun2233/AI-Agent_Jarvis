@@ -2,7 +2,11 @@
 credentials.json
 token.json
 token_calendar.json
+*.bak
 *.pyc
 __pycache__/
 node_modules/
 .superpowers/
+
+# 가변 데이터 로그 (개인 데이터)
+data/*.jsonl
