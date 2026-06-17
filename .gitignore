@@ -3,6 +3,7 @@ credentials.json
 token.json
 token_calendar.json
 *.bak
+_archive/
 *.pyc
 __pycache__/
 node_modules/
