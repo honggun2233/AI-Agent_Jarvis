@@ -1,6 +1,12 @@
-import os, sys, json, base64, argparse
+import os, sys, json, base64, argparse, mimetypes
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -32,13 +38,30 @@ def get_service():
     return build('gmail', 'v1', credentials=creds)
 
 
-def send_email(to, subject, body, cc=None, bcc=None, html=False):
+def send_email(to, subject, body, cc=None, bcc=None, html=False, attachments=None):
     service = get_service()
-    if html:
+    body_part = MIMEText(body, 'html' if html else 'plain', _charset='utf-8')
+    if attachments:
+        msg = MIMEMultipart('mixed')
+        msg.attach(body_part)
+        for path in attachments:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f'첨부 파일 없음: {path}')
+            ctype, _ = mimetypes.guess_type(path)
+            maintype, subtype = (ctype or 'application/octet-stream').split('/', 1)
+            with open(path, 'rb') as fh:
+                part = MIMEBase(maintype, subtype)
+                part.set_payload(fh.read())
+            encoders.encode_base64(part)
+            fname = os.path.basename(path)
+            part.add_header('Content-Disposition', 'attachment', filename=fname)
+            part.add_header('Content-Type', f'{maintype}/{subtype}', name=fname)
+            msg.attach(part)
+    elif html:
         msg = MIMEMultipart('alternative')
-        msg.attach(MIMEText(body, 'html', _charset='utf-8'))
+        msg.attach(body_part)
     else:
-        msg = MIMEText(body, 'plain', _charset='utf-8')
+        msg = body_part
     msg['to'] = to
     msg['subject'] = subject
     if cc:
@@ -62,6 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--cc')
     parser.add_argument('--bcc')
     parser.add_argument('--html', action='store_true', help='본문을 HTML로 발송')
+    parser.add_argument('--attach', action='append', help='첨부 파일 경로(여러 번 사용 가능)')
     args = parser.parse_args()
 
     if args.auth:
@@ -82,7 +106,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     sent = send_email(args.to, args.subject, body,
-                      cc=args.cc, bcc=args.bcc, html=args.html)
+                      cc=args.cc, bcc=args.bcc, html=args.html,
+                      attachments=args.attach)
     print(json.dumps({'status': 'sent', 'id': sent.get('id'),
-                      'to': args.to, 'subject': args.subject},
+                      'to': args.to, 'subject': args.subject,
+                      'attachments': args.attach or []},
                      ensure_ascii=False))

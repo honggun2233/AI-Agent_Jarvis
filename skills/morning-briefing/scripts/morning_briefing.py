@@ -231,6 +231,19 @@ def build_briefing() -> str:
     except Exception:
         lines.append("\n🚀 프로젝트: 조회 오류")
 
+    # repo 동기화 상태 (GitHub SSOT vs 로컬) — 문제 있는 repo만 표시
+    try:
+        sync = run_skill('skills/repo-sync/scripts/repo_sync_status.py', [])
+        if sync:
+            if sync.startswith('✅'):
+                lines.append(f"\n🔄 *Repo 동기화:* {sync}")
+            else:
+                lines.append("\n🔄 *Repo 동기화 주의:*")
+                for s in sync.splitlines():
+                    lines.append(f"  {s}")
+    except Exception:
+        pass
+
     lines.append("\n_Jarvis가 오늘도 함께합니다_ 💼")
     return '\n'.join(lines)
 
